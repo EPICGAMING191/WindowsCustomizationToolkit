@@ -11,6 +11,7 @@ global slider_
 global brightness
 global sideFrame
 global dropdown_
+global batteryLifeText_
 
 app = ctk.CTk()
 try:
@@ -28,27 +29,31 @@ def setScreenBrightness(brightness):
 def getScreenBrightness():
     return sbc.get_brightness()[0]
 
-def update(*args):
-    global dropdown_
-    app._set_appearance_mode(dropdown_.get())
-    app.update_idletasks()
+def update(args):
+    print(args + "hi")
+    #text_.set(text="Battery Life: " + str(get_battery_percent()) + "%")
+    app.after(10, update, 1)
+    print(args)
+    
 
-
-def frame():
-    global sideFrame
 
 def update_slider():
     slider_.set(getScreenBrightness())
     app.after(10, update_slider)
 
 def label(text_, x = 20, y = 20, width_= 40, height_= 40, text_size = 15):
-    ctk.CTkLabel(app, text=text_, width=width_, height=height_, font=("Arial", text_size, 'bold'), bg_color="transparent", text_color="white").place(x=x, y=y)
+    thislabel =  ctk.CTkLabel(app, text=text_, width=width_, height=height_, font=("Arial", text_size, 'bold'), bg_color="transparent", text_color="white")
+    thislabel.place(x=x, y=y)
+    return thislabel
 
 def setupRoot(width_, height_):
     ctk.set_appearance_mode('dark')
     app.title("Windows Customization Toolkit")
     app.geometry(f"{width_}x{height_}")
     app.resizable(False, False)
+
+def get_battery_percent():
+    return psutil.sensors_battery()[0]
 
 def slider1(x_, y_):
     global slider_
@@ -65,10 +70,11 @@ def dropdown(x_, y_):
 
 if __name__ == '__main__':
     setupRoot(width, height)
-    frame()
     slider1(10, 60)
     label("Windows Customization Toolkit", x=0, y=10, text_size=25, width_=1100)
     label("Screen Brightness", x=15, y=20)
+    batteryLifeText_ = label("Battery Life: " + str(get_battery_percent()) + "%", x=970, y=0)
     app.after(10, update_slider)
+    app.after(10, update, batteryLifeText_)
     app.mainloop()
 input()
