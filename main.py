@@ -29,11 +29,9 @@ def setScreenBrightness(brightness):
 def getScreenBrightness():
     return sbc.get_brightness()[0]
 
-def update(args):
-    print(args + "hi")
-    #text_.set(text="Battery Life: " + str(get_battery_percent()) + "%")
-    app.after(10, update, 1)
-    print(args)
+def update(text_):
+    text_.configure(text="Battery Life: " + str(get_battery_percent()) + "%")
+    app.after(10, update, text_)
     
 
 
