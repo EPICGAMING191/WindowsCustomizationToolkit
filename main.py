@@ -1,3 +1,5 @@
+#Documentation used: https://customtkinter.tomschimansky.com/
+
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 
@@ -51,6 +53,18 @@ def getCPU():
 def getRam():
     return psutil.virtual_memory().percent
 
+def login(pwd_):
+    if(pwd_ == None):
+        exit(1)
+    while(not isPasswordCorrect(pwd_)[0]):
+        pwd_ = inputDialog("Incorrect password! ", "Enter password here: ")
+        if(pwd_ is not None):
+            if(pwd_.lower() =="cancel"):
+                exit(1)
+        else:
+            exit(1)        
+
+
 def update(text_, cpu_, ram_):
     cpuPercent = getCPU()
     ramPercent = getRam()
@@ -86,6 +100,11 @@ def update(text_, cpu_, ram_):
     ram_.configure(text="RAM Usage: " + str(ramPercent) + "%")   
     app.after(1000, update, text_, cpu_, ram_)
 
+def update_100ms(volumeLabel_, screenBrightnessLabel_):
+    volumeLabel_.configure(text="Volume: " + str(get_volume()) + "%") 
+    screenBrightnessLabel_.configure(text="Screen Brightness: " + str(getScreenBrightness()) + "%")
+    app.after(100, update_100ms, volumeLabel_, screenBrightnessLabel_)    
+
 def isPasswordCorrect(pwd):
     passwords = ['guest', 'user1', 'user2', 'user3']
     for str_ in passwords:
@@ -93,9 +112,10 @@ def isPasswordCorrect(pwd):
             return True, str_
     return False, None    
 
-def update_slider():
+def update_slider(vol_):
     slider_.set(getScreenBrightness())
-    app.after(10, update_slider)
+    vol_.set(get_volume())
+    app.after(10, update_slider, vol_)
 
 def label(text_, x = 20, y = 20, width_= 40, height_= 40, text_size = 15, text_color_ = 'white'):
     thislabel =  ctk.CTkLabel(app, text=text_, width=width_, height=height_, font=("Arial", text_size, 'bold'), bg_color="transparent", text_color=text_color_)
@@ -113,27 +133,28 @@ def setupRoot(width_, height_):
     app.resizable(False, False)
 
 
-def slider1(x_, y_, command_, from_=0, to_=100):
+def slider1(x_, y_, command_, setValue_, from_=0, to_=100,):
     global slider_
     slider_ = ctk.CTkSlider(app, from_=from_, to=to_, command=command_, bg_color="transparent", fg_color="black")
-    slider_.set(getScreenBrightness())
+    slider_.set(setValue_)
     slider_.place(x=x_, y=y_)
+    return slider_
 
 if __name__ == '__main__':
     setupRoot(width, height)
-    slider1(10, 60, setScreenBrightness)
+    slider1(10, 60, setScreenBrightness, getScreenBrightness())
+    volumeSlider = slider1(10, 220, set_volume, get_volume())
     pwd = inputDialog("Enter password: ", "Enter password here: ")
-    while(not isPasswordCorrect(pwd)[0]):
-        pwd = inputDialog("Incorrect password! ", "Enter password here: ")
-        if(pwd.lower() =="cancel"):
-            exit(1)
-    label("Windows Customization Toolkit", x=0, y=10, text_size=25, width_=1100)
-    label("Screen Brightness", x=15, y=20)
+    login(pwd)
+    title = label("Windows Customization Toolkit", x=0, y=10, text_size=25, width_=1100)
+    screenBrightnessLabel = label("Screen Brightness: " + str(getScreenBrightness()) + "%", x=15, y=20)
     batteryLifeText_ = label("Battery Life: " + str(get_battery_percent()) + "%", x=970, y=0)
+    volumeLabel = label("Volume: " + str(get_volume()) + "%", x=15, y=180)
     cpu = label("CPU Usage: 0%", x=15, y=100)
     ram = label("RAM Usage: 0%", x=15, y=140)
-    app.after(10, update_slider)
+    app.after(10, update_slider, volumeSlider)
     app.after(10, update, batteryLifeText_, cpu, ram)
+    app.after(10, update_100ms, volumeLabel, screenBrightnessLabel)
     app.mainloop()
 
 input()
