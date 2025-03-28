@@ -26,16 +26,22 @@ def setScreenBrightness(brightness):
 
 
 def set_volume(vol):
-    devices = AudioUtilities.GetSpeakers()
-    interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-    volume = cast(interface, POINTER(IAudioEndpointVolume))
-    volume.SetMasterVolumeLevelScalar(vol / 100, None)    
+    try:
+        devices = AudioUtilities.GetSpeakers()
+        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        volume = cast(interface, POINTER(IAudioEndpointVolume))
+        volume.SetMasterVolumeLevelScalar(vol / 100, None)    
+    except:
+        return    
 
 def get_volume():
-    devices = AudioUtilities.GetSpeakers()
-    interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-    volume = interface.QueryInterface(IAudioEndpointVolume)
-    return int(volume.GetMasterVolumeLevelScalar() * 100)  # Convert to percentage
+    try:
+        devices = AudioUtilities.GetSpeakers()
+        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        volume = interface.QueryInterface(IAudioEndpointVolume)
+        return int(volume.GetMasterVolumeLevelScalar() * 100)  # Convert to percentage
+    except:
+        return -1
  
 
 def get_battery_percent():
@@ -101,7 +107,10 @@ def update(text_, cpu_, ram_):
     app.after(1000, update, text_, cpu_, ram_)
 
 def update_100ms(volumeLabel_, screenBrightnessLabel_):
-    volumeLabel_.configure(text="Volume: " + str(get_volume()) + "%") 
+    if(get_volume() != -1):
+        volumeLabel_.configure(text="Volume: " + str(get_volume()) + "%") 
+    else:
+        volumeLabel_.configure(text="Volume: DISABLED")  
     screenBrightnessLabel_.configure(text="Screen Brightness: " + str(getScreenBrightness()) + "%")
     app.after(100, update_100ms, volumeLabel_, screenBrightnessLabel_)    
 
@@ -112,10 +121,18 @@ def isPasswordCorrect(pwd):
             return True, str_
     return False, None    
 
-def update_slider(vol_):
-    slider_.set(getScreenBrightness())
-    vol_.set(get_volume())
-    app.after(10, update_slider, vol_)
+def update_slider(vol_, warned):
+    if(get_volume() == -1):
+        volumeSlider.configure(state="disabled")
+        if(warned):
+            app.after(10, update_slider, vol_, True)
+        else:
+            CTkMessagebox(title="Error", message="No audio output devices found.", icon="cancel")  
+            app.after(10, update_slider, vol_, True)
+    else:    
+        slider_.set(getScreenBrightness())
+        vol_.set(get_volume())
+        app.after(10, update_slider, vol_, True)
 
 def label(text_, x = 20, y = 20, width_= 40, height_= 40, text_size = 15, text_color_ = 'white'):
     thislabel =  ctk.CTkLabel(app, text=text_, width=width_, height=height_, font=("Arial", text_size, 'bold'), bg_color="transparent", text_color=text_color_)
@@ -152,7 +169,7 @@ if __name__ == '__main__':
     volumeLabel = label("Volume: " + str(get_volume()) + "%", x=15, y=180)
     cpu = label("CPU Usage: 0%", x=15, y=100)
     ram = label("RAM Usage: 0%", x=15, y=140)
-    app.after(10, update_slider, volumeSlider)
+    app.after(10, update_slider, volumeSlider, False)
     app.after(10, update, batteryLifeText_, cpu, ram)
     app.after(10, update_100ms, volumeLabel, screenBrightnessLabel)
     app.mainloop()
